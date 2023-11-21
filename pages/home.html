@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"
+    />
+    <title>Document</title>
+  </head>
+  <body>
+    <nav class="bg-green-800 w-full h-14 p-6 flex items-center justify-between">
+      <a href="/"><h1 class="text-white text-3xl">Pharmacy Website</h1></a>
+      <div class="flex flex-row items-center">
+        <a href="/cart" class="m-3">
+          <i
+            class="fa-solid fa-cart-shopping fa-2xl"
+            style="color: #ffffff"
+          ></i>
+        </a>
+        <a href="/profile" class="m-3">
+          <i class="fa-solid fa-user fa-2xl" style="color: #ffffff"></i>
+        </a>
+      </div>
+    </nav>
+    <div class="flex flex-wrap p-5" id="productContainer"></div>
+    <script>
+      const handleOrder = () => {
+        console.log("Ordered");
+      };
+      const handleAdd = () => {
+        console.log("Added");
+      };
+      const fetchProducts = async () => {
+        try {
+          const response = await fetch("/api/products");
+
+          if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+          }
+
+          const data = await response.json();
+          console.log(data);
+          renderProducts(data);
+        } catch (error) {
+          console.error("Error fetching products:", error);
+        }
+      };
+
+      const renderProducts = (products) => {
+        const productContainer = document.getElementById("productContainer");
+
+        products.forEach((product) => {
+          const card = document.createElement("div");
+          card.className = "h-96 w-80 bg-gray-200 rounded-lg m-4 p-2";
+
+          const image = document.createElement("img");
+          image.className = "h-64 w-80 mb-4";
+          const imageUrl = `data:image/jpeg;base64,${arrayBufferToBase64(
+            product.image.data
+          )}`;
+          image.src = imageUrl;
+
+          const name = document.createElement("p");
+          name.textContent = `Name: ${product.pname}`;
+
+          const price = document.createElement("p");
+          price.textContent = `Price: ${product.price}/-`;
+
+          const buttonsContainer = document.createElement("div");
+          buttonsContainer.className = "w-full flex justify-center";
+
+          const orderButton = document.createElement("button");
+          orderButton.className = "bg-green-400 p-3 w-1/2 rounded-lg mr-2";
+          orderButton.textContent = "Order";
+          orderButton.addEventListener("click", handleOrder);
+
+          const addButton = document.createElement("button");
+          addButton.className = "bg-amber-400 p-3 w-1/2 rounded-lg";
+          addButton.textContent = "Add to Cart";
+          addButton.addEventListener("click", handleAdd);
+
+          buttonsContainer.appendChild(orderButton);
+          buttonsContainer.appendChild(addButton);
+
+          card.appendChild(image);
+          card.appendChild(name);
+          card.appendChild(price);
+          card.appendChild(buttonsContainer);
+
+          productContainer.appendChild(card);
+        });
+      };
+
+      const arrayBufferToBase64 = (buffer) => {
+        const binary = Array.from(new Uint8Array(buffer))
+          .map((byte) => String.fromCharCode(byte))
+          .join("");
+        return btoa(binary);
+      };
+
+      fetchProducts();
+    </script>
+  </body>
+</html>
