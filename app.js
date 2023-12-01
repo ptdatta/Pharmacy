@@ -1,7 +1,8 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const pageRoutes = require("./pageRoutes");
-const apiRoutes = require('./apiRoutes')
+const apiRoutes = require('./apiRoutes');
+const authRoutes = require("./authRoutes");
 
 const app = express();
 app.use(express.json());
@@ -11,6 +12,7 @@ const port = 3000;
 
 app.use("/", pageRoutes);
 app.use("/", apiRoutes);
+app.use("/",authRoutes);
 
 app.listen(port, () => {
   console.log(`Server running at ${port}`);

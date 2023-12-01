@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Register Page</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
+      rel="stylesheet"
+    />
+  </head>
+  <body class="flex items-center justify-center h-screen bg-gray-100">
+    <div class="bg-white p-8 rounded shadow-md w-128">
+      <h1 class="text-2xl font-semibold mb-4">Register</h1>
+
+      <form id="registerForm">
+        <div class="mb-4 flex">
+          <div class="mr-2 w-1/2">
+            <label
+              for="firstName"
+              class="block text-sm font-medium text-gray-600"
+              >First Name</label
+            >
+            <input
+              type="text"
+              id="firstName"
+              name="firstName"
+              class="mt-1 p-2 w-full border rounded-md"
+              required
+            />
+          </div>
+          <div class="ml-2 w-1/2">
+            <label
+              for="lastName"
+              class="block text-sm font-medium text-gray-600"
+              >Last Name</label
+            >
+            <input
+              type="text"
+              id="lastName"
+              name="lastName"
+              class="mt-1 p-2 w-full border rounded-md"
+              required
+            />
+          </div>
+        </div>
+
+        <div class="mb-4">
+          <label for="email" class="block text-sm font-medium text-gray-600"
+            >Email</label
+          >
+          <input
+            type="email"
+            id="email"
+            name="email"
+            class="mt-1 p-2 w-full border rounded-md"
+            required
+          />
+        </div>
+
+        <div class="mb-4">
+          <label for="phone" class="block text-sm font-medium text-gray-600"
+            >Phone</label
+          >
+          <input
+            type="tel"
+            id="phone"
+            name="phone"
+            class="mt-1 p-2 w-full border rounded-md"
+            required
+          />
+        </div>
+
+        <div class="mb-4">
+          <label for="address" class="block text-sm font-medium text-gray-600"
+            >Address</label
+          >
+          <input
+            type="text"
+            id="address"
+            name="address"
+            class="mt-1 p-2 w-full border rounded-md"
+            required
+          />
+        </div>
+
+        <div class="mb-4">
+          <label for="password" class="block text-sm font-medium text-gray-600"
+            >Password</label
+          >
+          <input
+            type="password"
+            id="password"
+            name="password"
+            class="mt-1 p-2 w-full border rounded-md"
+            required
+          />
+        </div>
+
+        <button
+          type="submit"
+          onclick="handleRegister()"
+          class="w-full bg-green-600 text-white p-2 rounded-md hover:bg-green-700"
+        >
+          Register
+        </button>
+      </form>
+
+      <p class="mt-4 text-sm text-gray-600">
+        Already Registered?
+        <a href="/login" class="text-green-600">Login</a>
+      </p>
+    </div>
+
+    <script>
+      async function handleRegister() {
+        try {
+          const firstName = document.getElementById("firstName").value;
+          const lastName = document.getElementById("lastName").value;
+          const email = document.getElementById("email").value;
+          const phone = document.getElementById("phone").value;
+          const address = document.getElementById("address").value;
+          const password = document.getElementById("password").value;
+          const fullName = `${firstName} ${lastName}`;
+          const countResponse = await fetch(
+            "http://localhost:3000/api/totalCount?tableName=Users"
+          );
+          const countData = await countResponse.json();
+          const userCount = countData.totalCount + 1;
+          const UId = `U00${userCount}`;
+          const userData = {
+            UId: UId,
+            name: fullName,
+            email: email,
+            phone: phone,
+            address: address,
+            password: password,
+          };
+          const jsonData = JSON.stringify(userData);
+          const registerResponse = await fetch(
+            "http://localhost:3000/api/register",
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: jsonData,
+            }
+          );
+          if (registerResponse.ok) {
+            console.log("User registered successfully");
+          } else {
+            console.error("Failed to register user");
+          }
+        } catch (error) {
+          console.error("Error:", error.message);
+        }
+      }
+    </script>
+  </body>
+</html>

@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login Page</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
+      rel="stylesheet"
+    />
+  </head>
+  <body class="flex items-center justify-center h-screen bg-gray-100">
+    <div class="bg-white p-8 rounded shadow-md w-96">
+      <h1 class="text-2xl font-semibold mb-4">Login</h1>
+
+      <form id="loginForm">
+        <div class="mb-4">
+          <label for="username" class="block text-sm font-medium text-gray-600"
+            >Fullname</label
+          >
+          <input
+            type="text"
+            id="username"
+            name="username"
+            class="mt-1 p-2 w-full border rounded-md"
+            required
+          />
+        </div>
+
+        <div class="mb-4">
+          <label for="password" class="block text-sm font-medium text-gray-600"
+            >Password</label
+          >
+          <input
+            type="password"
+            id="password"
+            name="password"
+            class="mt-1 p-2 w-full border rounded-md"
+            required
+          />
+        </div>
+
+        <button
+          type="button"
+          onclick="handleLogin()"
+          class="w-full bg-green-600 text-white p-2 rounded-md hover:bg-green-700"
+        >
+          Login
+        </button>
+
+        <div id="errorMessage" class="mt-2 text-red-600"></div>
+      </form>
+
+      <p class="mt-4 text-sm text-gray-600">
+        Not Registered?
+        <a href="/register" class="text-green-600">Register</a>
+      </p>
+    </div>
+
+    <script>
+      async function handleLogin() {
+        const username = document.getElementById("username").value;
+        const password = document.getElementById("password").value;
+
+        if (username && password) {
+          const userData = {
+            name: username,
+            password: password,
+          };
+
+          const jsonData = JSON.stringify(userData);
+
+          try {
+            const response = await fetch("http://localhost:3000/api/login", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: jsonData,
+            });
+
+            if (response.ok) {
+              const responseData = await response.json();
+              console.log(responseData);
+            } 
+            else {
+              const errorData = await response.json();
+              displayErrorMessage(errorData.message);
+            }
+          } catch (error) {
+            console.log(error);
+          }
+        } else {
+          displayErrorMessage("*Please Enter Username and Password");
+        }
+      }
+
+      function displayErrorMessage(message) {
+        const errorMessageElement = document.getElementById("errorMessage");
+        errorMessageElement.textContent = message;
+      }
+    </script>
+  </body>
+</html>

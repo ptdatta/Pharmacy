@@ -1,6 +1,14 @@
 const express = require("express");
 const router = express.Router();
 
+router.get("/register", (req, res) => {
+  res.sendFile("pages/register.html", { root: __dirname });
+});
+
+router.get("/login", (req, res) => {
+  res.sendFile("pages/login.html", { root: __dirname });
+});
+
 router.get("/", (req, res) => {
   res.sendFile("pages/home.html", { root: __dirname });
 });
