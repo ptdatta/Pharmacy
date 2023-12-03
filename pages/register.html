@@ -26,7 +26,6 @@
               id="firstName"
               name="firstName"
               class="mt-1 p-2 w-full border rounded-md"
-              required
             />
           </div>
           <div class="ml-2 w-1/2">
@@ -40,7 +39,6 @@
               id="lastName"
               name="lastName"
               class="mt-1 p-2 w-full border rounded-md"
-              required
             />
           </div>
         </div>
@@ -54,7 +52,6 @@
             id="email"
             name="email"
             class="mt-1 p-2 w-full border rounded-md"
-            required
           />
         </div>
 
@@ -67,7 +64,6 @@
             id="phone"
             name="phone"
             class="mt-1 p-2 w-full border rounded-md"
-            required
           />
         </div>
 
@@ -80,7 +76,6 @@
             id="address"
             name="address"
             class="mt-1 p-2 w-full border rounded-md"
-            required
           />
         </div>
 
@@ -93,17 +88,17 @@
             id="password"
             name="password"
             class="mt-1 p-2 w-full border rounded-md"
-            required
           />
         </div>
 
         <button
-          type="submit"
+          type="button"
           onclick="handleRegister()"
           class="w-full bg-green-600 text-white p-2 rounded-md hover:bg-green-700"
         >
           Register
         </button>
+        <div id="errorMessage" class="mt-2 text-red-600"></div>
       </form>
 
       <p class="mt-4 text-sm text-gray-600">
@@ -128,33 +123,42 @@
           const countData = await countResponse.json();
           const userCount = countData.totalCount + 1;
           const UId = `U00${userCount}`;
-          const userData = {
-            UId: UId,
-            name: fullName,
-            email: email,
-            phone: phone,
-            address: address,
-            password: password,
-          };
-          const jsonData = JSON.stringify(userData);
-          const registerResponse = await fetch(
-            "http://localhost:3000/api/register",
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: jsonData,
+          if (firstName && lastName && email && phone && address && password) {
+            const userData = {
+              UId: UId,
+              name: fullName,
+              email: email,
+              phone: phone,
+              address: address,
+              password: password,
+            };
+            const jsonData = JSON.stringify(userData);
+            const registerResponse = await fetch(
+              "http://localhost:3000/api/register",
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: jsonData,
+              }
+            );
+            if (registerResponse.ok) {
+              console.log("User registered successfully");
+            } else {
+              const errorData = await registerResponse.json();
+              displayErrorMessage(errorData.msg);
             }
-          );
-          if (registerResponse.ok) {
-            console.log("User registered successfully");
           } else {
-            console.error("Failed to register user");
+            displayErrorMessage("*Enter all the fields");
           }
         } catch (error) {
           console.error("Error:", error.message);
         }
+      }
+      function displayErrorMessage(message) {
+        const errorMessageElement = document.getElementById("errorMessage");
+        errorMessageElement.textContent = message;
       }
     </script>
   </body>

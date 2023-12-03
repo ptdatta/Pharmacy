@@ -23,7 +23,7 @@
             id="username"
             name="username"
             class="mt-1 p-2 w-full border rounded-md"
-            required
+            oninput="handleChange()"
           />
         </div>
 
@@ -36,7 +36,7 @@
             id="password"
             name="password"
             class="mt-1 p-2 w-full border rounded-md"
-            required
+            oninput="handleChange()"
           />
         </div>
 
@@ -58,6 +58,9 @@
     </div>
 
     <script>
+      function handleChange() {
+        displayErrorMessage("");
+      }
       async function handleLogin() {
         const username = document.getElementById("username").value;
         const password = document.getElementById("password").value;
@@ -81,11 +84,11 @@
 
             if (response.ok) {
               const responseData = await response.json();
-              console.log(responseData);
-            } 
-            else {
+              localStorage.setItem("user",JSON.stringify(responseData));
+              window.location.href = '/';
+            } else {
               const errorData = await response.json();
-              displayErrorMessage(errorData.message);
+              displayErrorMessage(errorData.msg);
             }
           } catch (error) {
             console.log(error);

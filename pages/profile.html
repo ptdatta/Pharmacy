@@ -1,29 +1,62 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <script src="https://cdn.tailwindcss.com"></script>
     <link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"
     />
     <title>Document</title>
-</head>
-<body>
+  </head>
+  <body>
     <nav class="bg-green-800 w-full h-14 p-6 flex items-center justify-between">
-        <a href="/"><h1 class="text-white text-3xl">My Profile</h1></a>
-        <div class="flex flex-row items-center">
-          <a href="/cart" class="m-3">
-            <i
-              class="fa-solid fa-cart-shopping fa-2xl"
-              style="color: #ffffff"
-            ></i>
-          </a>
-          <a href="/profile" class="m-3">
-            <i class="fa-solid fa-user fa-2xl" style="color: #ffffff"></i>
-          </a>
-        </div>
-      </nav>
-</body>
+      <a href="/"><h1 class="text-white text-3xl">My Profile</h1></a>
+      <div class="flex flex-row items-center">
+        <a href="/cart" class="m-3">
+          <i
+            class="fa-solid fa-cart-shopping fa-2xl"
+            style="color: #ffffff"
+          ></i>
+        </a>
+        <a href="/profile" class="m-3">
+          <i class="fa-solid fa-user fa-2xl" style="color: #ffffff"></i>
+        </a>
+      </div>
+    </nav>
+    <div class="my-10 mx-20 flex flex-row items-center">
+      <img src="./assets/user.png" alt="user" />
+      <div class="mx-8">
+        <h1 class="text-3xl" id="name"></h1>
+        <h1 class="text-2xl" id="address"></h1>
+        <button
+          class="mt-10 p-2 border-2 border-red-500 rounded-full"
+          onclick="handleLogout()"
+        >
+          <i
+            class="fa-solid fa-right-from-bracket fa-xl"
+            style="color: #c11a1a"
+          ></i>
+        </button>
+      </div>
+    </div>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const user = JSON.parse(localStorage.getItem("user"));
+        if (!user) {
+          window.location.href = "/login";
+        }
+        document.getElementById("name").innerHTML = `Name: ${user.name}`;
+        document.getElementById(
+          "address"
+        ).innerHTML = `Address: ${user.address}`;
+      });
+
+      function handleLogout() {
+        localStorage.removeItem("user");
+        window.location.href = "/login";
+      }
+    </script>
+  </body>
 </html>
