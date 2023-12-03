@@ -28,10 +28,11 @@
     <div class="my-10 mx-20 flex flex-row items-center">
       <img src="./assets/user.png" alt="user" />
       <div class="mx-8">
-        <h1 class="text-3xl" id="name"></h1>
-        <h1 class="text-2xl" id="address"></h1>
+        <h1 class="text-2xl" id="name"></h1>
+        <h1 class="text-xl" id="phone"></h1>
+        <h1 class="text-xl" id="address"></h1>
         <button
-          class="mt-10 p-2 border-2 border-red-500 rounded-full"
+          class="mt-6 p-2 border-2 border-red-500 rounded-full"
           onclick="handleLogout()"
         >
           <i
@@ -48,6 +49,7 @@
           window.location.href = "/login";
         }
         document.getElementById("name").innerHTML = `Name: ${user.name}`;
+        document.getElementById("phone").innerHTML = `Phone No: ${user.phone}`;
         document.getElementById(
           "address"
         ).innerHTML = `Address: ${user.address}`;
