@@ -67,19 +67,19 @@ router.put("/api/updateCart", (req, res) => {
   switch (value) {
     case "increase":
       sql = `
-        UPDATE Cart
-        SET quantity = quantity + 1,
-            price = price * 2
-        WHERE UId = ? AND producttId = ?
-      `;
+      UPDATE Cart
+      SET quantity = quantity + 1,
+          price = (SELECT singlePrice FROM Product WHERE producttId = Cart.producttId) * quantity
+      WHERE UId = ? AND producttId = ?;
+  `;
       break;
     case "decrease":
       sql = `
-        UPDATE Cart
-        SET quantity = GREATEST(quantity - 1, 0),
-            price = GREATEST(price / 2, 0)
-        WHERE UId = ? AND producttId = ?
-      `;
+    UPDATE Cart
+    SET quantity = GREATEST(quantity - 1, 0),
+        price = (SELECT singlePrice FROM Product WHERE producttId = Cart.producttId) * quantity
+    WHERE UId = ? AND producttId = ?
+  `;
       break;
     case "remove":
       sql = `
