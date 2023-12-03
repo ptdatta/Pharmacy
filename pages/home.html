@@ -8,7 +8,7 @@
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"
     />
-    <title>Document</title>
+    <title>Pharmacy</title>
   </head>
   <body>
     <nav class="bg-green-600 w-full h-14 p-6 flex items-center justify-between">
@@ -27,17 +27,22 @@
     </nav>
     <div class="flex flex-wrap p-5" id="productContainer"></div>
     <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const user = JSON.parse(localStorage.getItem("user"));
+        if (!user) {
+          window.location.href = "/login";
+        }
+      });
       const handleAdd = (product) => {
         const user = JSON.parse(localStorage.getItem("user"));
-        // console.log(product);
         const cartData = {
           UId: user.UId,
-          productId: product.producttId, 
-          quantity: 1, 
-          price: product.price, 
+          productId: product.producttId,
+          quantity: 1,
+          price: product.singlePrice,
         };
         const jsonData = JSON.stringify(cartData);
-        console.log(jsonData);
+        console.log(product);
         fetch("http://localhost:3000/api/addToCart", {
           method: "POST",
           headers: {
@@ -53,6 +58,7 @@
           })
           .then((responseData) => {
             console.log("Item added to cart successfully:", responseData);
+            window.location.reload();
           })
           .catch((error) => {
             console.error("Error adding item to cart:", error);
@@ -60,8 +66,9 @@
       };
 
       const fetchProducts = async () => {
+        const user = JSON.parse(localStorage.getItem("user"));
         try {
-          const response = await fetch("/api/products");
+          const response = await fetch(`/api/products?UId=${user.UId}`);
 
           if (!response.ok) {
             throw new Error(`HTTP error! Status: ${response.status}`);
@@ -92,15 +99,21 @@
           name.textContent = `Name: ${product.pname}`;
 
           const price = document.createElement("p");
-          price.textContent = `Price: ${product.price}/-`;
+          price.textContent = `Price: ${product.singlePrice}/-`;
 
           const buttonsContainer = document.createElement("div");
           buttonsContainer.className = "w-full flex justify-center";
 
           const addButton = document.createElement("button");
-          addButton.className =
-            "bg-amber-400 hover:bg-amber-500 p-3 my-2 w-full rounded-lg";
-          addButton.textContent = "Add to Cart";
+          addButton.className = `${
+            product.inCart === 1
+              ? "bg-green-400 p-3 my-2 w-full rounded-lg"
+              : "bg-amber-400 hover:bg-amber-500 p-3 my-2 w-full rounded-lg"
+          }`;
+          addButton.textContent = `${
+            product.inCart === 1 ? "Added" : "Add to Cart"
+          }`;
+          addButton.disabled = product.inCart === 1;
           addButton.addEventListener("click", () => handleAdd(product));
 
           buttonsContainer.appendChild(addButton);

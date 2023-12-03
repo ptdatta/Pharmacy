@@ -26,6 +26,7 @@
               id="firstName"
               name="firstName"
               class="mt-1 p-2 w-full border rounded-md"
+              oninput="handleChange()"
             />
           </div>
           <div class="ml-2 w-1/2">
@@ -39,6 +40,7 @@
               id="lastName"
               name="lastName"
               class="mt-1 p-2 w-full border rounded-md"
+              oninput="handleChange()"
             />
           </div>
         </div>
@@ -52,6 +54,7 @@
             id="email"
             name="email"
             class="mt-1 p-2 w-full border rounded-md"
+            oninput="handleChange()"
           />
         </div>
 
@@ -64,6 +67,7 @@
             id="phone"
             name="phone"
             class="mt-1 p-2 w-full border rounded-md"
+            oninput="handleChange()"
           />
         </div>
 
@@ -76,6 +80,7 @@
             id="address"
             name="address"
             class="mt-1 p-2 w-full border rounded-md"
+            oninput="handleChange()"
           />
         </div>
 
@@ -88,6 +93,7 @@
             id="password"
             name="password"
             class="mt-1 p-2 w-full border rounded-md"
+            oninput="handleChange()"
           />
         </div>
 
@@ -108,6 +114,9 @@
     </div>
 
     <script>
+      function handleChange() {
+        displayErrorMessage("");
+      }
       async function handleRegister() {
         try {
           const firstName = document.getElementById("firstName").value;
@@ -145,6 +154,7 @@
             );
             if (registerResponse.ok) {
               console.log("User registered successfully");
+              window.location.href = "/login";
             } else {
               const errorData = await registerResponse.json();
               displayErrorMessage(errorData.msg);

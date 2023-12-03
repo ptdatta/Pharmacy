@@ -3,8 +3,16 @@ const router = express.Router();
 const con = require("./dbconnection");
 
 router.get("/api/products", (req, res) => {
-  const sql = "SELECT * FROM Product";
-  con.query(sql, (error, results) => {
+  const { UId } = req.query;
+
+  const sql = `
+    SELECT Product.*, 
+           CASE WHEN Cart.producttId IS NOT NULL THEN true ELSE false END AS inCart
+    FROM Product
+    LEFT JOIN Cart ON Product.producttId = Cart.producttId AND Cart.UId = ?
+  `;
+
+  con.query(sql, [UId], (error, results) => {
     if (error) {
       return console.error(error.message);
     }
@@ -15,7 +23,7 @@ router.get("/api/products", (req, res) => {
 router.get("/api/product", (req, res) => {
   const { productId } = req.query;
   const sql = `SELECT * FROM Product WHERE producttId = ?`;
-  con.query(sql,[productId], (error, results) => {
+  con.query(sql, [productId], (error, results) => {
     if (error) {
       return console.error(error.message);
     }
@@ -108,8 +116,10 @@ router.put("/api/updateCart", (req, res) => {
 router.get("/api/getCartbyUser", (req, res) => {
   const { UId } = req.query;
   const sql = `
-    SELECT * FROM Cart
-    WHERE UId = ?
+  SELECT Cart.*, Product.*
+  FROM Cart
+  INNER JOIN Product ON Cart.producttId = Product.producttId
+  WHERE Cart.UId = ?
   `;
   con.query(sql, [UId], (error, results) => {
     if (error) {
