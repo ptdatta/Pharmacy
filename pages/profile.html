@@ -42,7 +42,162 @@
         </button>
       </div>
     </div>
+    <h1 class="text-2xl ml-20">My Orders:</h1>
+    <div id="orderContainer"></div>
     <script>
+      const fetchOrders = async () => {
+        const user = JSON.parse(localStorage.getItem("user"));
+        try {
+          const response = await fetch(`/api/getOrderbyUser?UId=${user.UId}`);
+          if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+          }
+          const data = await response.json();
+          console.log(data);
+          renderOrders(data);
+        } catch (error) {
+          console.error("Error fetching products:", error);
+        }
+      };
+
+      const renderOrders = (orders) => {
+        const orderContainer = document.getElementById("orderContainer");
+        let disabled = false;
+
+        orders.forEach((order) => {
+          if (!order.status) {
+            disabled = true;
+          }
+          const orderDiv = document.createElement("div");
+          orderDiv.className =
+            "mx-20 my-5 w-80% flex flex-row justify-between items-center p-5 rounded-2xl shadow-xl";
+
+          const productInfoContainer = document.createElement("div");
+
+          const valueObj = JSON.parse(order.Value);
+
+          for (const [productName, quantity] of Object.entries(valueObj)) {
+            const productParagraph = document.createElement("p");
+            productParagraph.textContent = `${productName}: ${quantity}`;
+            productInfoContainer.appendChild(productParagraph);
+          }
+
+          const statusContainer = document.createElement("div");
+          statusContainer.className = "flex flex-row my-4 items-center";
+
+          for (let i = 0; i < 5; i++) {
+            const statusBox = document.createElement("div");
+            statusBox.className = `h-6 w-2 ${
+              !disabled ? "bg-blue-500" : "bg-gray-500"
+            } mr-2`;
+            statusContainer.appendChild(statusBox);
+          }
+
+          const cancelButton = document.createElement("button");
+          cancelButton.className = `px-6 py-2 text-white ${
+            !disabled ? "bg-red-400" : "bg-gray-400"
+          } rounded-xl`;
+          cancelButton.textContent = "Cancel Order";
+          cancelButton.disabled = disabled;
+          cancelButton.addEventListener("click", () => handleCancel(order));
+
+          statusContainer.appendChild(cancelButton);
+
+          const arrivedAtParagraph = document.createElement("p");
+          arrivedAtParagraph.textContent = `Arrived at: ${getNextDayFormatted(
+            order.Date
+          )}`;
+
+          productInfoContainer.appendChild(statusContainer);
+          productInfoContainer.appendChild(arrivedAtParagraph);
+
+          const totalParagraph = document.createElement("div");
+          totalParagraph.className = "text-xl";
+          totalParagraph.textContent = `Total: ${order.price}/-`;
+
+          orderDiv.appendChild(productInfoContainer);
+          orderDiv.appendChild(totalParagraph);
+
+          orderContainer.appendChild(orderDiv);
+
+          if (order.status) {
+            statusContainer
+              .querySelectorAll(".bg-blue-500")
+              .forEach((box, index) => {
+                setTimeout(() => {
+                  box.style.backgroundColor = "grey";
+                }, index * 500);
+              });
+            setTimeout(() => {
+              disabled = true;
+              cancelButton.disabled = true;
+              cancelButton.className =
+                "px-6 py-2 text-white bg-gray-400 rounded-xl";
+            }, 2500);
+            setTimeout(() => {
+              updateStatus(order.OrderId, order.UId);
+            }, 9000);
+          }
+        });
+      };
+
+      function handleCancel(order) {
+        const { UId, OrderId } = order;
+
+        fetch(`/api/deleteOrderByUser?UId=${UId}&OrderId=${OrderId}`, {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        })
+          .then((response) => {
+            if (!response.ok) {
+              throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            return response.json();
+          })
+          .then((data) => {
+            console.log("Order deleted successfully:", data);
+            window.location.reload();
+          })
+          .catch((error) => {
+            console.error("Error deleting order:", error);
+          });
+      }
+
+      function updateStatus(orderId, userId) {
+        const url = `http://localhost:3000/api/updateStatus?OrderId=${orderId}&UId=${userId}`;
+
+        return fetch(url, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        })
+          .then((response) => {
+            if (!response.ok) {
+              throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            return response.json();
+          })
+          .then((data) => {
+            console.log("Status updated successfully:", data);
+          })
+          .catch((error) => {
+            console.error("Error updating status:", error);
+          });
+      }
+
+      function getNextDayFormatted(inputDateString) {
+        const inputDate = new Date(inputDateString);
+        const nextDay = new Date(inputDate);
+        nextDay.setDate(nextDay.getDate() + 1);
+        const options = { day: "2-digit", month: "short", year: "numeric" };
+        const formattedDate = nextDay.toLocaleDateString("en-US", options);
+
+        return formattedDate;
+      }
+
       document.addEventListener("DOMContentLoaded", function () {
         const user = JSON.parse(localStorage.getItem("user"));
         if (!user) {
@@ -59,6 +214,7 @@
         localStorage.removeItem("user");
         window.location.href = "/login";
       }
+      fetchOrders();
     </script>
   </body>
 </html>

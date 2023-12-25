@@ -27,8 +27,10 @@
     </nav>
     <div class="flex flex-col justify-center p-5" id="cartContainer"></div>
     <h1 class="mx-10 my-3 text-3xl" id="total"></h1>
-    <button id="order"></button>
+    <button id="order" onclick="handleOrder()"></button>
     <script>
+      let total = 0;
+      let cartdetails;
       const fetchProducts = async () => {
         const user = JSON.parse(localStorage.getItem("user"));
         try {
@@ -36,8 +38,8 @@
           if (!response.ok) {
             throw new Error(`HTTP error! Status: ${response.status}`);
           }
-
           const data = await response.json();
+          cartdetails = data;
           renderProducts(data);
         } catch (error) {
           console.error("Error fetching products:", error);
@@ -45,7 +47,6 @@
       };
       const renderProducts = (products) => {
         const cartContainer = document.getElementById("cartContainer");
-        let total = 0;
         products.forEach((product) => {
           total += product.price;
           const productContainer = document.createElement("div");
@@ -182,6 +183,40 @@
           })
           .catch((error) => {
             console.error("Error updating cart:", error);
+          });
+      };
+
+      const handleOrder = () => {
+        const user = JSON.parse(localStorage.getItem("user"));
+        const orderValue = cartdetails.reduce((result, cart) => {
+          result[cart.pname] = cart.quantity;
+          return result;
+        }, {});
+        const orderData = {
+          UId: user.UId,
+          address: user.address,
+          value: orderValue,
+          price: total,
+        };
+        fetch("http://localhost:3000/api/order", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(orderData),
+        })
+          .then((response) => {
+            if (!response.ok) {
+              throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            return response.json();
+          })
+          .then((data) => {
+            console.log("Order successful:", data);
+            window.location.reload();
+          })
+          .catch((error) => {
+            console.error("Error making order:", error);
           });
       };
 

@@ -141,7 +141,7 @@ router.delete("/api/deleteCartByUser", (req, res) => {
     DELETE FROM Cart
     WHERE UId = ?
   `;
-  pool.query(sql, [UId], (error, result) => {
+  con.query(sql, [UId], (error, result) => {
     if (error) {
       console.error("Error deleting cart by user:", error);
       return res.status(500).json({ message: "Internal Server Error" });
@@ -152,6 +152,93 @@ router.delete("/api/deleteCartByUser", (req, res) => {
         .json({ message: "No items found for the specified user" });
     }
     res.status(200).json({ message: "Cart deleted successfully" });
+  });
+});
+
+router.post("/api/order", (req, res) => {
+  const { UId, address, value, price } = req.body;
+  const sql = `
+    INSERT INTO Orders (UId, Address, Value,price)
+    VALUES (?,?, ?, ?)
+  `;
+  const sql2 = `
+  DELETE FROM Cart
+  WHERE UId = ?
+  `;
+  con.query(sql, [UId, address, JSON.stringify(value), price], (error) => {
+    if (error) {
+      console.error("Error to order", error);
+      return res.status(500).json({ message: "Internal Server Error" });
+    }
+    con.query(sql2, [UId], (error) => {
+      if (error) {
+        console.error("Error to order", error);
+        return res.status(500).json({ message: "Internal Server Error" });
+      }
+      res.status(200).json({ message: "Order Successfull and Cart Deleted" });
+    });
+  });
+});
+
+router.get("/api/getOrderbyUser", (req, res) => {
+  const { UId } = req.query;
+  const sql = `
+  SELECT *
+  FROM Orders
+  WHERE UId = ?
+  `;
+  con.query(sql, [UId], (error, results) => {
+    if (error) {
+      console.error("Error getting order by user:", error);
+      return res.status(500).json({ message: "Internal Server Error" });
+    }
+    if (results.length === 0) {
+      return res
+        .status(404)
+        .json({ message: "No items found for the specified user" });
+    }
+    res.status(200).json(results);
+  });
+});
+
+router.put("/api/updateStatus", (req, res) => {
+  const { UId, OrderId } = req.query;
+  const sql = `
+  UPDATE Orders
+  SET status = 0
+  WHERE UId = ? AND OrderId = ?;  
+  `;
+  con.query(sql, [UId, OrderId], (error, result) => {
+    if (error) {
+      console.error("Error deleting order by user:", error);
+      return res.status(500).json({ message: "Internal Server Error" });
+    }
+    if (result.affectedRows === 0) {
+      return res
+        .status(404)
+        .json({ message: "No items found for the specified user" });
+    }
+    res.status(200).json({ message: "Order status updated" });
+  });
+});
+
+router.delete("/api/deleteOrderByUser", (req, res) => {
+  const { UId, OrderId } = req.query;
+  const sql = `
+  DELETE FROM Orders
+    WHERE UId = ? AND OrderId = ?
+  `;
+  con.query(sql, [UId, OrderId], (error, result) => {
+    if (error) {
+      console.error("Error deleting order by user:", error);
+      return res.status(500).json({ message: "Internal Server Error" });
+    }
+    if (result.affectedRows === 0) {
+      return res
+        .status(404)
+        .json({ message: "No items found for the specified user" });
+    }
+    res.status(200).json({ message: "Order removed successfully" });
   });
 });
 
