@@ -85,7 +85,7 @@
           const statusContainer = document.createElement("div");
           statusContainer.className = "flex flex-row my-4 items-center";
 
-          for (let i = 0; i < 5; i++) {
+          for (let i = 0; i < 6; i++) {
             const statusBox = document.createElement("div");
             statusBox.className = `h-6 w-2 ${
               !disabled ? "bg-blue-500" : "bg-gray-500"
@@ -133,7 +133,7 @@
               cancelButton.disabled = true;
               cancelButton.className =
                 "px-6 py-2 text-white bg-gray-400 rounded-xl";
-            }, 2500);
+            }, 3000);
             setTimeout(() => {
               updateStatus(order.OrderId, order.UId);
             }, 9000);
