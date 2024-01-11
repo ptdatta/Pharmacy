@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"
+    />
+    <title>Product</title>
+  </head>
+  <body>
+    <nav
+      class="bg-green-600 w-full h-14 p-6 flex items-center justify-between sticky top-0 z-10"
+    >
+      <a href="/"><h1 class="text-white text-3xl">&lt</h1></a>
+      <div class="flex flex-row items-center">
+        <div id="iconContainer"></div>
+        <a href="/cart" class="m-3">
+          <i
+            class="fa-solid fa-cart-shopping fa-2xl"
+            style="color: #ffffff"
+          ></i>
+        </a>
+        <a href="/profile" class="m-3">
+          <i class="fa-solid fa-user fa-2xl" style="color: #ffffff"></i>
+        </a>
+      </div>
+    </nav>
+    <div id="productContainer"></div>
+    <script>
+      const user = JSON.parse(localStorage.getItem("user"));
+      document.addEventListener("DOMContentLoaded", function () {
+        if (!user || user.name === "Guest") {
+          renderLogin();
+        }
+      });
+
+      const renderLogin = () => {
+        const logindiv = document.getElementById("iconContainer");
+        const loginBtn = document.createElement("button");
+        loginBtn.className = "p-2 bg-white rounded-xl mr-10 hover:bg-gray-100";
+        loginBtn.textContent = "LogIn/Register";
+        loginBtn.addEventListener("click", () => {
+          window.location.href = "/login";
+        });
+        logindiv.appendChild(loginBtn);
+      };
+      const fetchProduct = async () => {
+        const productId = window.location.pathname.split("/").pop();
+        try {
+          const response = await fetch(
+            `/api/product?productId=${productId}&UId=${user.UId}`
+          );
+
+          if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+          }
+          const data = await response.json();
+          console.log(data[0]);
+          renderProduct(data[0]);
+        } catch (error) {
+          console.error("Error fetching products:", error);
+        }
+      };
+      const showSnackbar = (message) => {
+        const snackbar = document.createElement("div");
+        snackbar.className =
+          "fixed bottom-8 right-8 bg-gray-800 text-white drop-shadow-2xl px-4 py-2 rounded shadow-md";
+        snackbar.classList.add(
+          "transition-all",
+          "duration-300",
+          "opacity-0",
+          "transform",
+          "-translate-y-2"
+        );
+        snackbar.textContent = message;
+        document.body.appendChild(snackbar);
+        void snackbar.offsetWidth;
+        snackbar.classList.remove("opacity-0", "-translate-y-2");
+        setTimeout(() => {
+          snackbar.classList.add("opacity-0", "-translate-y-2");
+          setTimeout(() => {
+            document.body.removeChild(snackbar);
+          }, 300);
+        }, 2000);
+      };
+      const renderProduct = (product) => {
+        const productContainer = document.getElementById("productContainer");
+        productContainer.innerHTML = "";
+        productContainer.className = "w-screen";
+        const productDiv = document.createElement("div");
+        productDiv.className = "mx-20 my-5 w-80% flex flex-col items-center";
+
+        const image = document.createElement("img");
+        image.src = `data:image/jpeg;base64,${arrayBufferToBase64(
+          product.image.data
+        )}`;
+        image.className = "w-96 h-80 object-cover rounded-lg";
+
+        productDiv.appendChild(image);
+
+        const productInfoContainer = document.createElement("div");
+        productInfoContainer.className = "mt-4 p-4 w-full";
+
+        const name = document.createElement("p");
+        name.textContent = `Name: ${product.pname}`;
+        name.className = "text-2xl font-semibold";
+
+        const price = document.createElement("p");
+        price.textContent = `Price: ${product.singlePrice}/-`;
+        price.className = "text-xl";
+
+        const description = document.createElement("p");
+        description.textContent = `Description: ${product.description}`;
+        description.className = "text-xl text-gray-600";
+
+        const addToCartButton = document.createElement("button");
+        addToCartButton.textContent = `${
+          product.inCart === 1 ? "Added" : "Add to Cart"
+        }`;
+        addToCartButton.className = `${
+          product.inCart === 1
+            ? "bg-green-400 p-3 my-2 w-full rounded-lg"
+            : "bg-amber-400 hover:bg-amber-500 p-3 my-2 w-full rounded-lg"
+        }`;
+        addToCartButton.disabled = product.inCart === 1;
+        addToCartButton.addEventListener("click", () => handleAdd(product));
+
+        productInfoContainer.appendChild(name);
+        productInfoContainer.appendChild(price);
+        productInfoContainer.appendChild(description);
+        if (user.name !== "Guest") {
+          productInfoContainer.appendChild(addToCartButton);
+        }else{
+          showSnackbar("🙏 Please LogIn to Buy");
+        }
+
+        productDiv.appendChild(productInfoContainer);
+
+        productContainer.appendChild(productDiv);
+      };
+
+      const arrayBufferToBase64 = (buffer) => {
+        const binary = Array.from(new Uint8Array(buffer))
+          .map((byte) => String.fromCharCode(byte))
+          .join("");
+        return btoa(binary);
+      };
+
+      const handleAdd = (product) => {
+        const cartData = {
+          UId: user.UId,
+          productId: product.producttId,
+          quantity: 1,
+          price: product.singlePrice,
+        };
+        const jsonData = JSON.stringify(cartData);
+        console.log(product);
+        fetch("http://localhost:3000/api/addToCart", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: jsonData,
+        })
+          .then((response) => {
+            if (!response.ok) {
+              throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            return response.json();
+          })
+          .then((responseData) => {
+            console.log("Item added to cart successfully:", responseData);
+            showSnackbar("✅ Item added to cart successfully");
+            product.inCart = 1;
+            renderProduct(product);
+          })
+          .catch((error) => {
+            console.error("Error adding item to cart:", error);
+            showSnackbar("❌ Sorry there is some problem");
+          });
+      };
+
+      fetchProduct();
+    </script>
+  </body>
+</html>

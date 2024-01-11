@@ -11,9 +11,23 @@
     <title>Pharmacy</title>
   </head>
   <body>
-    <nav class="bg-green-600 w-full h-14 p-6 flex items-center justify-between">
-      <a href="/"><h1 class="text-white text-3xl">Pharmacy Website</h1></a>
+    <nav
+      class="bg-green-600 w-full h-14 p-6 flex items-center justify-between sticky top-0 z-10"
+    >
+      <div class="flex flex-row">
+        <a href="/"><h1 class="text-white text-3xl">Calcutta Pharmacy</h1></a>
+        <div class="w-96 mx-16">
+          <input
+            type="text"
+            placeholder="Search..."
+            class="w-full p-2 rounded border border-white"
+            id="searchInput"
+            oninput="handleSearch(event)"
+          />
+        </div>
+      </div>
       <div class="flex flex-row items-center">
+        <div id="iconContainer"></div>
         <a href="/cart" class="m-3">
           <i
             class="fa-solid fa-cart-shopping fa-2xl"
@@ -25,57 +39,111 @@
         </a>
       </div>
     </nav>
-    <div class="flex flex-wrap p-5" id="productContainer"></div>
+    <div class="flex flex-wrap p-5 justify-center" id="productContainer"></div>
+    <div class="bg-gray-800 text-white p-4 flex flex-col md:flex-row">
+      <div class="mr-4 md:mr-8">
+        <h4 class="font-bold mb-2">Contact Us</h4>
+        <ul class="space-y-2">
+          <li>
+            <a href="tel:+91-1234567890"
+              ><i class="fa-solid fa-phone mr-2"></i> +91-1234567890</a
+            >
+          </li>
+          <li>
+            <a href="mailto:support@yourpharmacy.com"
+              ><i class="fa-solid fa-envelope mr-2"></i>
+              support@calcuttapharmacy.com</a
+            >
+          </li>
+          <li>
+            <i class="fa-solid fa-map-marker-alt mr-2"></i> JD-2, JD Block,
+            Sector 3, Bidhannagar, Kolkata, West Bengal 700106
+          </li>
+        </ul>
+      </div>
+
+      <div class="space-y-2 mr-4 md:mr-8">
+        <h4 class="font-bold mb-2">Useful Links</h4>
+        <ul class="space-y-2">
+          <li><a href="#">FAQs</a></li>
+          <li><a href="#">Delivery Information</a></li>
+          <li><a href="#">Privacy Policy</a></li>
+          <li><a href="#">Terms & Conditions</a></li>
+        </ul>
+      </div>
+
+      <div class="flex-grow text-center md:text-left">
+        <h4 class="font-bold mb-2">Stay Connected</h4>
+        <a href="#" class="inline-block mr-2">
+          <i class="fa-brands fa-facebook-f fa-2xl"></i>
+        </a>
+        <a href="#" class="inline-block mr-2">
+          <i class="fa-brands fa-twitter fa-2xl"></i>
+        </a>
+        <a href="#" class="inline-block">
+          <i class="fa-brands fa-instagram fa-2xl"></i>
+        </a>
+      </div>
+
+      <div class="mt-4 text-center">
+        © 2024 Calcutta Pharmacy. All rights reserved.
+      </div>
+    </div>
+
     <script>
+      let products;
       document.addEventListener("DOMContentLoaded", function () {
-        const user = JSON.parse(localStorage.getItem("user"));
-        if (!user) {
-          window.location.href = "/login";
+        fetchProducts();
+        let user = JSON.parse(localStorage.getItem("user"));
+        if (!user || user.name === "Guest") {
+          const guestUser = {
+            UId: "U000",
+            address: "Browser",
+            email: "guest@gmail.com",
+            name: "Guest",
+            phone: "0000000000",
+          };
+          localStorage.setItem("user", JSON.stringify(guestUser));
+          renderLogin();
         }
       });
-      const handleAdd = (product) => {
-        const user = JSON.parse(localStorage.getItem("user"));
-        const cartData = {
-          UId: user.UId,
-          productId: product.producttId,
-          quantity: 1,
-          price: product.singlePrice,
-        };
-        const jsonData = JSON.stringify(cartData);
-        console.log(product);
-        fetch("http://localhost:3000/api/addToCart", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: jsonData,
-        })
-          .then((response) => {
-            if (!response.ok) {
-              throw new Error(`HTTP error! Status: ${response.status}`);
-            }
-            return response.json();
-          })
-          .then((responseData) => {
-            console.log("Item added to cart successfully:", responseData);
-            window.location.reload();
-          })
-          .catch((error) => {
-            console.error("Error adding item to cart:", error);
-          });
+
+      const renderLogin = () => {
+        const logindiv = document.getElementById("iconContainer");
+        const loginBtn = document.createElement("button");
+        loginBtn.className = "p-2 bg-white rounded-xl mr-10 hover:bg-gray-100";
+        loginBtn.textContent = "LogIn/Register";
+        loginBtn.addEventListener("click", () => {
+          window.location.href = "/login";
+        });
+        logindiv.appendChild(loginBtn);
       };
 
-      const fetchProducts = async () => {
-        const user = JSON.parse(localStorage.getItem("user"));
+      const handleSearch = async (event) => {
+        const searchItem = event.target.value;
         try {
-          const response = await fetch(`/api/products?UId=${user.UId}`);
+          const response = await fetch(`/api/products?name=${searchItem}`);
 
           if (!response.ok) {
             throw new Error(`HTTP error! Status: ${response.status}`);
           }
+          products = await response.json();
+          console.log(products);
+          renderProducts(products);
+        } catch (error) {
+          console.error("Error fetching products:", error);
+        }
+      };
 
-          const data = await response.json();
-          renderProducts(data);
+      const fetchProducts = async () => {
+        try {
+          const response = await fetch(`/api/products`);
+
+          if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+          }
+          products = await response.json();
+          renderProducts(products);
         } catch (error) {
           console.error("Error fetching products:", error);
         }
@@ -83,13 +151,14 @@
 
       const renderProducts = (products) => {
         const productContainer = document.getElementById("productContainer");
-
+        productContainer.innerHTML = "";
         products.forEach((product) => {
           const card = document.createElement("div");
-          card.className = "h-[392px] w-80 bg-gray-200 rounded-lg m-4 p-2";
+          card.className =
+            "h-[392px] w-80 rounded-lg m-4 p-2 cursor-pointer hover:drop-shadow-2xl hover:bg-white";
 
           const image = document.createElement("img");
-          image.className = "h-64 w-80 mb-4";
+          image.className = "h-72 w-80 mb-4";
           const imageUrl = `data:image/jpeg;base64,${arrayBufferToBase64(
             product.image.data
           )}`;
@@ -99,32 +168,24 @@
           name.textContent = `Name: ${product.pname}`;
 
           const price = document.createElement("p");
-          price.textContent = `Price: ${product.singlePrice}/-`;
+          price.textContent = `Price: ₹${product.singlePrice}`;
 
           const buttonsContainer = document.createElement("div");
           buttonsContainer.className = "w-full flex justify-center";
 
-          const addButton = document.createElement("button");
-          addButton.className = `${
-            product.inCart === 1
-              ? "bg-green-400 p-3 my-2 w-full rounded-lg"
-              : "bg-amber-400 hover:bg-amber-500 p-3 my-2 w-full rounded-lg"
-          }`;
-          addButton.textContent = `${
-            product.inCart === 1 ? "Added" : "Add to Cart"
-          }`;
-          addButton.disabled = product.inCart === 1;
-          addButton.addEventListener("click", () => handleAdd(product));
-
-          buttonsContainer.appendChild(addButton);
-
           card.appendChild(image);
           card.appendChild(name);
           card.appendChild(price);
-          card.appendChild(buttonsContainer);
+          card.addEventListener("click", () =>
+            navigateToProduct(product.producttId)
+          );
 
           productContainer.appendChild(card);
         });
+      };
+
+      const navigateToProduct = (productId) => {
+        window.location.href = `/product/${productId}`;
       };
 
       const arrayBufferToBase64 = (buffer) => {
@@ -133,8 +194,6 @@
           .join("");
         return btoa(binary);
       };
-
-      fetchProducts();
     </script>
   </body>
 </html>

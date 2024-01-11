@@ -3,16 +3,12 @@ const router = express.Router();
 const con = require("./dbconnection");
 
 router.get("/api/products", (req, res) => {
-  const { UId } = req.query;
-
-  const sql = `
-    SELECT Product.*, 
-           CASE WHEN Cart.producttId IS NOT NULL THEN true ELSE false END AS inCart
-    FROM Product
-    LEFT JOIN Cart ON Product.producttId = Cart.producttId AND Cart.UId = ?
-  `;
-
-  con.query(sql, [UId], (error, results) => {
+  const { name } = req.query;
+  let sql = `SELECT * FROM Product WHERE totalQuantity > 0`;
+  if (name && name !== "") {
+    sql += ` AND pname LIKE '${name}%'`;
+  }
+  con.query(sql, (error, results) => {
     if (error) {
       return console.error(error.message);
     }
@@ -21,9 +17,18 @@ router.get("/api/products", (req, res) => {
 });
 
 router.get("/api/product", (req, res) => {
-  const { productId } = req.query;
-  const sql = `SELECT * FROM Product WHERE producttId = ?`;
-  con.query(sql, [productId], (error, results) => {
+  const { productId, UId } = req.query;
+  const sql = `SELECT 
+    Product.*,
+    CASE WHEN Cart.producttId IS NOT NULL THEN true ELSE false END AS inCart
+  FROM 
+    Product
+  LEFT JOIN 
+    Cart ON Product.producttId = Cart.producttId AND Cart.UId = ?
+  WHERE 
+    Product.producttId = ?;
+  `;
+  con.query(sql, [UId, productId], (error, results) => {
     if (error) {
       return console.error(error.message);
     }
@@ -64,52 +69,17 @@ router.post("/api/addToCart", (req, res) => {
 router.put("/api/updateCart", (req, res) => {
   const { value, UId, productId } = req.query;
   let sql;
-  switch (value) {
-    case "increase":
-      sql = `
-      UPDATE Cart
-      SET quantity = quantity + 1,
-          price = (SELECT singlePrice FROM Product WHERE producttId = Cart.producttId) * quantity
-      WHERE UId = ? AND producttId = ?;
-  `;
-      break;
-    case "decrease":
-      sql = `
-    UPDATE Cart
-    SET quantity = GREATEST(quantity - 1, 0),
-        price = (SELECT singlePrice FROM Product WHERE producttId = Cart.producttId) * quantity
-    WHERE UId = ? AND producttId = ?
-  `;
-      break;
-    case "remove":
-      sql = `
-        DELETE FROM Cart
-        WHERE UId = ? AND producttId = ?
-      `;
-      break;
-    default:
-      return res.status(400).json({ message: "Invalid 'value' parameter" });
+  if (value == 0) {
+    sql = `DELETE FROM Cart WHERE UId='${UId}' AND producttId='${productId}'`;
+  } else {
+    sql = `UPDATE Cart SET quantity = '${value}',price = '${value}' * (SELECT singlePrice FROM Product WHERE producttId= '${productId}') WHERE producttId='${productId}' AND UId = '${UId}'`;
   }
-  con.query(sql, [UId, productId], (error, result) => {
+  con.query(sql, (error) => {
     if (error) {
-      console.error("Error updating cart:", error);
+      console.error("Error updating item to cart:", error);
       return res.status(500).json({ message: "Internal Server Error" });
     }
-    if (value === "decrease" && result.affectedRows === 0) {
-      sql = `
-        DELETE FROM Cart
-        WHERE UId = ? AND producttId = ?
-      `;
-      con.query(sql, [UId, productId], (deleteError) => {
-        if (deleteError) {
-          console.error("Error removing item from cart:", deleteError);
-          return res.status(500).json({ message: "Internal Server Error" });
-        }
-        res.status(200).json({ message: "Cart updated successfully" });
-      });
-    } else {
-      res.status(200).json({ message: "Cart updated successfully" });
-    }
+    res.status(200).json({ message: "Cart Updated Successfully" });
   });
 });
 
@@ -125,11 +95,6 @@ router.get("/api/getCartbyUser", (req, res) => {
     if (error) {
       console.error("Error getting cart by user:", error);
       return res.status(500).json({ message: "Internal Server Error" });
-    }
-    if (results.length === 0) {
-      return res
-        .status(404)
-        .json({ message: "No items found for the specified user" });
     }
     res.status(200).json(results);
   });
@@ -156,29 +121,78 @@ router.delete("/api/deleteCartByUser", (req, res) => {
 });
 
 router.post("/api/order", (req, res) => {
-  const { UId, address, value, price } = req.body;
-  const sql = `
-    INSERT INTO Orders (UId, Address, Value,price)
-    VALUES (?,?, ?, ?)
+  const { UId, address, value, price, status } = req.body;
+  const sqlInsertOrder = `
+    INSERT INTO Orders (UId, Address, Value, Price, Status)
+    VALUES (?, ?, ?, ?, ?)
   `;
-  const sql2 = `
-  DELETE FROM Cart
-  WHERE UId = ?
+  const sqlDeleteCart = `
+    DELETE FROM Cart
+    WHERE UId = ?
   `;
-  con.query(sql, [UId, address, JSON.stringify(value), price], (error) => {
+  const sqlUpdateProductQuantities = `
+    UPDATE Product
+    SET totalQuantity = totalQuantity - ?
+    WHERE pname = ?;
+  `;
+
+  con.beginTransaction((error) => {
     if (error) {
-      console.error("Error to order", error);
+      console.error("Error starting transaction", error);
       return res.status(500).json({ message: "Internal Server Error" });
     }
-    con.query(sql2, [UId], (error) => {
-      if (error) {
-        console.error("Error to order", error);
-        return res.status(500).json({ message: "Internal Server Error" });
+
+    con.query(
+      sqlInsertOrder,
+      [UId, address, JSON.stringify(value), price, status],
+      (error, results) => {
+        if (error) {
+          return con.rollback(() => {
+            console.error("Error inserting into Orders", error);
+            res.status(500).json({ message: "Internal Server Error" });
+          });
+        }
+
+        con.query(sqlDeleteCart, [UId], (error) => {
+          if (error) {
+            return con.rollback(() => {
+              console.error("Error deleting from Cart", error);
+              res.status(500).json({ message: "Internal Server Error" });
+            });
+          }
+
+          // Assuming value is an object with properties pname and quantity
+          for (const pname in value) {
+            const quantity = value[pname];
+            con.query(
+              sqlUpdateProductQuantities,
+              [quantity, pname],
+              (error) => {
+                if (error) {
+                  return con.rollback(() => {
+                    console.error("Error updating product quantities", error);
+                    res.status(500).json({ message: "Internal Server Error" });
+                  });
+                }
+              }
+            );
+          }
+
+          con.commit((error) => {
+            if (error) {
+              return con.rollback(() => {
+                console.error("Error committing transaction", error);
+                res.status(500).json({ message: "Internal Server Error" });
+              });
+            }
+            res.status(200).json({ message: "Order Successful, Cart Deleted, and Product Quantities Updated" });
+          });
+        });
       }
-      res.status(200).json({ message: "Order Successfull and Cart Deleted" });
-    });
+    );
   });
 });
+
 
 router.get("/api/getOrderbyUser", (req, res) => {
   const { UId } = req.query;
@@ -223,23 +237,67 @@ router.put("/api/updateStatus", (req, res) => {
 });
 
 router.delete("/api/deleteOrderByUser", (req, res) => {
-  const { UId, OrderId } = req.query;
-  const sql = `
-  DELETE FROM Orders
-    WHERE UId = ? AND OrderId = ?
+  const { UId, OrderId, value } = req.body;
+
+  // Delete the order
+  const deleteOrderSQL = `
+    DELETE FROM Orders
+    WHERE UId = ? AND OrderId = ?;
   `;
-  con.query(sql, [UId, OrderId], (error, result) => {
+
+  // Increase product quantities
+  const increaseProductQuantitiesSQL = `
+    UPDATE Product
+    SET totalQuantity = totalQuantity + ?
+    WHERE pname = ?;
+  `;
+
+  con.beginTransaction((error) => {
     if (error) {
-      console.error("Error deleting order by user:", error);
+      console.error("Error starting transaction", error);
       return res.status(500).json({ message: "Internal Server Error" });
     }
-    if (result.affectedRows === 0) {
-      return res
-        .status(404)
-        .json({ message: "No items found for the specified user" });
-    }
-    res.status(200).json({ message: "Order removed successfully" });
+
+    // Delete the order
+    con.query(deleteOrderSQL, [UId, OrderId], (error, result) => {
+      if (error) {
+        return con.rollback(() => {
+          console.error("Error deleting order by user:", error);
+          res.status(500).json({ message: "Internal Server Error" });
+        });
+      }
+
+      if (result.affectedRows === 0) {
+        return con.rollback(() => {
+          res.status(404).json({ message: "No items found for the specified user" });
+        });
+      }
+
+      // Increase product quantities
+      for (const pname in value) {
+        const quantity = value[pname];
+        con.query(increaseProductQuantitiesSQL, [quantity, pname], (error) => {
+          if (error) {
+            return con.rollback(() => {
+              console.error("Error increasing product quantities", error);
+              res.status(500).json({ message: "Internal Server Error" });
+            });
+          }
+        });
+      }
+
+      con.commit((error) => {
+        if (error) {
+          return con.rollback(() => {
+            console.error("Error committing transaction", error);
+            res.status(500).json({ message: "Internal Server Error" });
+          });
+        }
+        res.status(200).json({ message: "Order removed successfully" });
+      });
+    });
   });
 });
+
 
 module.exports = router;

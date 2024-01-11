@@ -50,7 +50,13 @@
 
         <div id="errorMessage" class="mt-2 text-red-600"></div>
       </form>
-
+      <button
+        type="button"
+        onclick="gotoHome()"
+        class="w-full bg-indigo-600 text-white p-2 rounded-md hover:bg-indigo-700"
+      >
+        Browse Products
+      </button>
       <p class="mt-4 text-sm text-gray-600">
         Not Registered?
         <a href="/register" class="text-green-600">Register</a>
@@ -58,6 +64,9 @@
     </div>
 
     <script>
+      const gotoHome = () => {
+        window.location.href = "/";
+      };
       function handleChange() {
         displayErrorMessage("");
       }
@@ -84,8 +93,8 @@
 
             if (response.ok) {
               const responseData = await response.json();
-              localStorage.setItem("user",JSON.stringify(responseData));
-              window.location.href = '/';
+              localStorage.setItem("user", JSON.stringify(responseData));
+              window.location.href = "/";
             } else {
               const errorData = await response.json();
               displayErrorMessage(errorData.msg);

@@ -11,9 +11,12 @@
     <title>Profile</title>
   </head>
   <body>
-    <nav class="bg-green-600 w-full h-14 p-6 flex items-center justify-between">
+    <nav
+      class="bg-green-600 w-full h-14 p-6 flex items-center justify-between sticky top-0 z-10"
+    >
       <a href="/"><h1 class="text-white text-3xl">&lt My Profile</h1></a>
       <div class="flex flex-row items-center">
+        <div id="iconContainer"></div>
         <a href="/cart" class="m-3">
           <i
             class="fa-solid fa-cart-shopping fa-2xl"
@@ -45,6 +48,23 @@
     <h1 class="text-2xl ml-20">My Orders:</h1>
     <div id="orderContainer"></div>
     <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        let user = JSON.parse(localStorage.getItem("user"));
+        if (!user || user.name === "Guest") {
+          renderLogin();
+        }
+      });
+
+      const renderLogin = () => {
+        const logindiv = document.getElementById("iconContainer");
+        const loginBtn = document.createElement("button");
+        loginBtn.className = "p-2 bg-white rounded-xl mr-10 hover:bg-gray-100";
+        loginBtn.textContent = "LogIn/Register";
+        loginBtn.addEventListener("click", () => {
+          window.location.href = "/login";
+        });
+        logindiv.appendChild(loginBtn);
+      };
       const fetchOrders = async () => {
         const user = JSON.parse(localStorage.getItem("user"));
         try {
@@ -62,12 +82,8 @@
 
       const renderOrders = (orders) => {
         const orderContainer = document.getElementById("orderContainer");
-        let disabled = false;
-
+        orderContainer.innerHTML = "";
         orders.forEach((order) => {
-          if (!order.status) {
-            disabled = true;
-          }
           const orderDiv = document.createElement("div");
           orderDiv.className =
             "mx-20 my-5 w-80% flex flex-row justify-between items-center p-5 rounded-2xl shadow-xl";
@@ -88,17 +104,17 @@
           for (let i = 0; i < 6; i++) {
             const statusBox = document.createElement("div");
             statusBox.className = `h-6 w-2 ${
-              !disabled ? "bg-blue-500" : "bg-gray-500"
+              order.status ? "bg-blue-500" : "bg-gray-500"
             } mr-2`;
             statusContainer.appendChild(statusBox);
           }
 
           const cancelButton = document.createElement("button");
           cancelButton.className = `px-6 py-2 text-white ${
-            !disabled ? "bg-red-400" : "bg-gray-400"
+            order.status ? "bg-red-400" : "bg-gray-400"
           } rounded-xl`;
           cancelButton.textContent = "Cancel Order";
-          cancelButton.disabled = disabled;
+          // cancelButton.disabled = order.status ? false : true;
           cancelButton.addEventListener("click", () => handleCancel(order));
 
           statusContainer.appendChild(cancelButton);
@@ -120,35 +136,38 @@
 
           orderContainer.appendChild(orderDiv);
 
-          if (order.status) {
-            statusContainer
-              .querySelectorAll(".bg-blue-500")
-              .forEach((box, index) => {
-                setTimeout(() => {
-                  box.style.backgroundColor = "grey";
-                }, index * 500);
-              });
-            setTimeout(() => {
-              disabled = true;
-              cancelButton.disabled = true;
-              cancelButton.className =
-                "px-6 py-2 text-white bg-gray-400 rounded-xl";
-            }, 3000);
-            setTimeout(() => {
-              updateStatus(order.OrderId, order.UId);
-            }, 9000);
-          }
+          // if (order.status) {
+          //   statusContainer
+          //     .querySelectorAll(".bg-blue-500")
+          //     .forEach((box, index) => {
+          //       setTimeout(() => {
+          //         box.style.backgroundColor = "grey";
+          //       }, index * 500);
+          //     });
+          //   setTimeout(() => {
+          //     cancelButton.disabled = true;
+          //     cancelButton.className =
+          //       "px-6 py-2 text-white bg-gray-400 rounded-xl";
+          //   }, 3000);
+          //   setTimeout(() => {
+          //     updateStatus(order.OrderId, order.UId);
+          //   }, 9000);
+          // }
         });
       };
 
       function handleCancel(order) {
-        const { UId, OrderId } = order;
-
-        fetch(`/api/deleteOrderByUser?UId=${UId}&OrderId=${OrderId}`, {
+        const reqBody = {
+          UId: order.UId,
+          OrderId: order.OrderId,
+          value: order.Value,
+        };
+        fetch(`/api/deleteOrderByUser`, {
           method: "DELETE",
           headers: {
             "Content-Type": "application/json",
           },
+          body: JSON.stringify(reqBody),
         })
           .then((response) => {
             if (!response.ok) {
@@ -157,13 +176,36 @@
             return response.json();
           })
           .then((data) => {
-            console.log("Order deleted successfully:", data);
-            window.location.reload();
+            showSnackbar("✅ Order Deleted Successfully");
+            fetchOrders();
           })
           .catch((error) => {
             console.error("Error deleting order:", error);
           });
       }
+
+      const showSnackbar = (message) => {
+        const snackbar = document.createElement("div");
+        snackbar.className =
+          "fixed bottom-8 right-8 bg-gray-800 text-white drop-shadow-2xl px-4 py-2 rounded shadow-md";
+        snackbar.classList.add(
+          "transition-all",
+          "duration-300",
+          "opacity-0",
+          "transform",
+          "-translate-y-2"
+        );
+        snackbar.textContent = message;
+        document.body.appendChild(snackbar);
+        void snackbar.offsetWidth;
+        snackbar.classList.remove("opacity-0", "-translate-y-2");
+        setTimeout(() => {
+          snackbar.classList.add("opacity-0", "-translate-y-2");
+          setTimeout(() => {
+            document.body.removeChild(snackbar);
+          }, 300);
+        }, 2000);
+      };
 
       function updateStatus(orderId, userId) {
         const url = `http://localhost:3000/api/updateStatus?OrderId=${orderId}&UId=${userId}`;
@@ -200,9 +242,6 @@
 
       document.addEventListener("DOMContentLoaded", function () {
         const user = JSON.parse(localStorage.getItem("user"));
-        if (!user) {
-          window.location.href = "/login";
-        }
         document.getElementById("name").innerHTML = `Name: ${user.name}`;
         document.getElementById("phone").innerHTML = `Phone No: ${user.phone}`;
         document.getElementById(
@@ -212,7 +251,7 @@
 
       function handleLogout() {
         localStorage.removeItem("user");
-        window.location.href = "/login";
+        window.location.href = "/";
       }
       fetchOrders();
     </script>
