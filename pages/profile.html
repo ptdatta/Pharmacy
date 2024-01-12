@@ -10,9 +10,9 @@
     />
     <title>Profile</title>
   </head>
-  <body>
+  <body class="flex flex-col min-h-screen">
     <nav
-      class="bg-green-600 w-full h-14 p-6 flex items-center justify-between sticky top-0 z-10"
+      class="bg-[#008858] w-full h-16 p-6 flex items-center justify-between sticky top-0 z-10"
     >
       <a href="/"><h1 class="text-white text-3xl">&lt My Profile</h1></a>
       <div class="flex flex-row items-center">
@@ -45,13 +45,64 @@
         </button>
       </div>
     </div>
-    <h1 class="text-2xl ml-20">My Orders:</h1>
+    <h1 id="myOrders" class="text-2xl ml-20"></h1>
     <div id="orderContainer"></div>
+    <footer
+      class="bg-gray-800 text-white p-4 flex flex-col md:flex-row mt-auto"
+    >
+      <div class="mr-4 md:mr-8">
+        <h4 class="font-bold mb-2">Contact Us</h4>
+        <ul class="space-y-2">
+          <li>
+            <a href="tel:+91-1234567890"
+              ><i class="fa-solid fa-phone mr-2"></i> +91-1234567890</a
+            >
+          </li>
+          <li>
+            <a href="mailto:support@yourpharmacy.com"
+              ><i class="fa-solid fa-envelope mr-2"></i>
+              support@calcuttapharmacy.com</a
+            >
+          </li>
+          <li>
+            <i class="fa-solid fa-map-marker-alt mr-2"></i> JD-2, JD Block,
+            Sector 3, Bidhannagar, Kolkata, West Bengal 700106
+          </li>
+        </ul>
+      </div>
+
+      <div class="space-y-2 mr-4 md:mr-8">
+        <h4 class="font-bold mb-2">Useful Links</h4>
+        <ul class="space-y-2">
+          <li><a href="#">FAQs</a></li>
+          <li><a href="#">Delivery Information</a></li>
+          <li><a href="#">Privacy Policy</a></li>
+          <li><a href="#">Terms & Conditions</a></li>
+        </ul>
+      </div>
+
+      <div class="flex-grow text-center md:text-left">
+        <h4 class="font-bold mb-2">Stay Connected</h4>
+        <a href="#" class="inline-block mr-2">
+          <i class="fa-brands fa-facebook-f fa-2xl"></i>
+        </a>
+        <a href="#" class="inline-block mr-2">
+          <i class="fa-brands fa-twitter fa-2xl"></i>
+        </a>
+        <a href="#" class="inline-block">
+          <i class="fa-brands fa-instagram fa-2xl"></i>
+        </a>
+      </div>
+
+      <div class="mt-4 text-center">
+        © 2024 Calcutta Pharmacy. All rights reserved.
+      </div>
+    </footer>
     <script>
       document.addEventListener("DOMContentLoaded", function () {
         let user = JSON.parse(localStorage.getItem("user"));
         if (!user || user.name === "Guest") {
-          renderLogin();
+          window.location.href = "/login";
         }
       });
 
@@ -82,6 +133,12 @@
 
       const renderOrders = (orders) => {
         const orderContainer = document.getElementById("orderContainer");
+        let myOrders = document.getElementById("myOrders");
+        if (orders.length > 0) {
+          myOrders.innerHTML = "My Orders: ";
+        } else {
+          myOrders.innerHTML = "";
+        }
         orderContainer.innerHTML = "";
         orders.forEach((order) => {
           const orderDiv = document.createElement("div");
@@ -101,18 +158,8 @@
           const statusContainer = document.createElement("div");
           statusContainer.className = "flex flex-row my-4 items-center";
 
-          for (let i = 0; i < 6; i++) {
-            const statusBox = document.createElement("div");
-            statusBox.className = `h-6 w-2 ${
-              order.status ? "bg-blue-500" : "bg-gray-500"
-            } mr-2`;
-            statusContainer.appendChild(statusBox);
-          }
-
           const cancelButton = document.createElement("button");
-          cancelButton.className = `px-6 py-2 text-white ${
-            order.status ? "bg-red-400" : "bg-gray-400"
-          } rounded-xl`;
+          cancelButton.className = `px-6 py-2 text-white bg-red-400 rounded-xl`;
           cancelButton.textContent = "Cancel Order";
           // cancelButton.disabled = order.status ? false : true;
           cancelButton.addEventListener("click", () => handleCancel(order));
@@ -120,16 +167,16 @@
           statusContainer.appendChild(cancelButton);
 
           const arrivedAtParagraph = document.createElement("p");
-          arrivedAtParagraph.textContent = `Arrived at: ${getNextDayFormatted(
+          arrivedAtParagraph.textContent = `Arriving on: ${getNextDayFormatted(
             order.Date
           )}`;
 
-          productInfoContainer.appendChild(statusContainer);
           productInfoContainer.appendChild(arrivedAtParagraph);
+          productInfoContainer.appendChild(statusContainer);
 
           const totalParagraph = document.createElement("div");
           totalParagraph.className = "text-xl";
-          totalParagraph.textContent = `Total: ${order.price}/-`;
+          totalParagraph.textContent = `Total: ₹${order.price}`;
 
           orderDiv.appendChild(productInfoContainer);
           orderDiv.appendChild(totalParagraph);
@@ -160,7 +207,7 @@
         const reqBody = {
           UId: order.UId,
           OrderId: order.OrderId,
-          value: order.Value,
+          value: JSON.parse(order.Value),
         };
         fetch(`/api/deleteOrderByUser`, {
           method: "DELETE",
@@ -176,7 +223,7 @@
             return response.json();
           })
           .then((data) => {
-            showSnackbar("✅ Order Deleted Successfully");
+            showSnackbar("✅ Order Cancelled");
             fetchOrders();
           })
           .catch((error) => {

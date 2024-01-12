@@ -206,11 +206,6 @@ router.get("/api/getOrderbyUser", (req, res) => {
       console.error("Error getting order by user:", error);
       return res.status(500).json({ message: "Internal Server Error" });
     }
-    if (results.length === 0) {
-      return res
-        .status(404)
-        .json({ message: "No items found for the specified user" });
-    }
     res.status(200).json(results);
   });
 });

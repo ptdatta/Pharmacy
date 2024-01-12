@@ -10,9 +10,9 @@
     />
     <title>Pharmacy</title>
   </head>
-  <body>
+  <body class="flex flex-col min-h-screen">
     <nav
-      class="bg-green-600 w-full h-14 p-6 flex items-center justify-between sticky top-0 z-10"
+      class="bg-[#008858] w-full h-16 p-6 flex items-center justify-between sticky top-0 z-10"
     >
       <div class="flex flex-row">
         <a href="/"><h1 class="text-white text-3xl">Calcutta Pharmacy</h1></a>
@@ -40,7 +40,7 @@
       </div>
     </nav>
     <div class="flex flex-wrap p-5 justify-center" id="productContainer"></div>
-    <div class="bg-gray-800 text-white p-4 flex flex-col md:flex-row">
+    <footer class="bg-gray-800 text-white p-4 flex flex-col md:flex-row mt-auto">
       <div class="mr-4 md:mr-8">
         <h4 class="font-bold mb-2">Contact Us</h4>
         <ul class="space-y-2">
@@ -88,7 +88,7 @@
       <div class="mt-4 text-center">
         © 2024 Calcutta Pharmacy. All rights reserved.
       </div>
-    </div>
+    </footer>
 
     <script>
       let products;

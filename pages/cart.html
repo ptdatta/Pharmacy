@@ -10,9 +10,9 @@
     />
     <title>Cart</title>
   </head>
-  <body>
+  <body class="flex flex-col min-h-screen">
     <nav
-      class="bg-green-600 w-full h-14 p-6 flex items-center justify-between sticky top-0 z-10"
+      class="bg-[#008858] w-full h-16 p-6 flex items-center justify-between sticky top-0 z-10"
     >
       <a href="/"><h1 class="text-white text-3xl">&lt My Cart</h1></a>
       <div class="flex flex-row items-center">
@@ -31,7 +31,9 @@
     <div class="flex flex-wrap p-5" id="cartContainer"></div>
     <h1 class="mx-10 my-3 text-3xl" id="total"></h1>
     <button id="order" onclick="handleOrder()"></button>
-    <div class="bg-gray-800 text-white p-4 flex flex-col md:flex-row sticky">
+    <footer
+      class="bg-gray-800 text-white p-4 flex flex-end absol md:flex-row mt-auto"
+    >
       <div class="mr-4 md:mr-8">
         <h4 class="font-bold mb-2">Contact Us</h4>
         <ul class="space-y-2">
@@ -43,12 +45,12 @@
           <li>
             <a href="mailto:support@yourpharmacy.com"
               ><i class="fa-solid fa-envelope mr-2"></i>
-              support@yourpharmacy.com</a
+              support@calcuttapharmacy.com</a
             >
           </li>
           <li>
-            <i class="fa-solid fa-map-marker-alt mr-2"></i> Presidency Division,
-            West Bengal, India
+            <i class="fa-solid fa-map-marker-alt mr-2"></i> JD-2, JD Block,
+            Sector 3, Bidhannagar, Kolkata, West Bengal 700106
           </li>
         </ul>
       </div>
@@ -77,9 +79,9 @@
       </div>
 
       <div class="mt-4 text-center">
-        © 2024 Your Pharmacy. All rights reserved.
+        © 2024 Calcutta Pharmacy. All rights reserved.
       </div>
-    </div>
+    </footer>
     <script>
       document.addEventListener("DOMContentLoaded", function () {
         let user = JSON.parse(localStorage.getItem("user"));
@@ -143,7 +145,7 @@
           productDetails.className = "flex flex-col";
           const productName = document.createElement("h1");
           productName.className = "mx-5 text-3xl cursor-pointer";
-          productName.textContent = product.pname +" X " + product.quantity;
+          productName.textContent = product.pname + " X " + product.quantity;
           productName.addEventListener("click", () =>
             navigateToProduct(product.producttId)
           );
@@ -190,15 +192,20 @@
         });
         let totalPrice = document.getElementById("total");
         let orderButton = document.getElementById("order");
+        let noItems = document.createElement("div");
         if (products.length > 0) {
           totalPrice.innerHTML = `Total: ₹${total}`;
           orderButton.className =
             "mx-10 my-3 px-6 py-3 bg-green-400 rounded-xl";
           orderButton.textContent = "Order";
+          cartContainer.removeChild(noItems);
         } else {
           totalPrice.innerHTML = "";
           orderButton.className = "";
           orderButton.innerHTML = "";
+          noItems.innerHTML = "No Items in Cart";
+          noItems.className = "text-gray-500 w-full h-52 flex justify-center items-end text-2xl";
+          cartContainer.appendChild(noItems);
         }
       };
 
@@ -230,7 +237,7 @@
       };
 
       const handleUpdate = (inputEle, product) => {
-        if (inputEle.value < 2) {
+        if (inputEle.value < 0) {
           showSnackbar("❌ Enter correct value");
         } else if (inputEle.value > product.totalQuantity) {
           showSnackbar("😓😓 Sorry we don't have that much");
